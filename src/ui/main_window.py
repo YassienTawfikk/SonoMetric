@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QPushButton, QGroupBox, QFrame, QMessageBox, QButtonGroup, QSpacerItem, QSizePolicy)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QCloseEvent, QFont
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -9,60 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from src.utils import config, cleanup
-from src.core.simulation import VesselPhantom, UltrasoundSim
-from src.core.processing import SignalProcessor
-
-# --- Worker Thread (Physics & DSP) ---
-class SimulationWorker(QThread):
-    """
-    Runs the simulation in a separate thread to keep the UI responsive.
-    """
-    # progress signal removed as requested (no progress bar)
-    finished = pyqtSignal(object, object, object, float) # v_axis, t, Zxx, v_est
-    error = pyqtSignal(str)
-
-    def __init__(self, angle):
-        super().__init__()
-        self.angle = angle
-        self._is_running = True
-
-    def stop(self):
-        self._is_running = False
-
-    def run(self):
-        try:
-            # 1. Initialize Physics Objects
-            phantom = VesselPhantom(
-                config.VESSEL_RADIUS, config.VESSEL_LENGTH, 
-                config.V_MAX_TRUE, config.NUM_SCATTERERS, config.GATE_DEPTH
-            )
-            sim = UltrasoundSim(config.FS, config.F0, config.C, config.PULSE_CYCLES)
-            
-            # 2. Setup Time Axis
-            depth_strt, depth_end = 0.02, 0.06
-            t_ax = np.arange(2*depth_strt/config.C, 2*depth_end/config.C, 1/config.FS)
-            
-            rf_frame = np.zeros((len(t_ax), config.NUM_LINES))
-            dt_slow = 1.0/config.PRF
-            
-            # 3. Acquisition Loop
-            for k in range(config.NUM_LINES):
-                if not self._is_running: return
-                
-                # Acquire single line
-                rf_line = sim.acquire_rf_line(phantom, self.angle, t_ax)
-                rf_frame[:, k] = rf_line
-                
-                # Move Scatterers
-                phantom.update(dt_slow)
-                # No progress emit needed
-                
-            # 4. Signal Processing
-            v_axis, t_spec, Zxx, v_est = SignalProcessor.process_frame(rf_frame, self.angle)
-            self.finished.emit(v_axis, t_spec, Zxx, v_est)
-            
-        except Exception as e:
-            self.error.emit(str(e))
+from src.core.controller import DopplerController
 
 # --- Main Window (GUI) ---
 class MainWindow(QMainWindow):
@@ -73,6 +20,11 @@ class MainWindow(QMainWindow):
         
         # Data Storage
         self.err_history = [] 
+        
+        # Controller Init
+        self.controller = DopplerController()
+        self.controller.results_ready.connect(self.handle_results)
+        self.controller.error_occurred.connect(self.handle_error)
         
         self.setup_ui()
         self.apply_theme()
@@ -132,6 +84,11 @@ class MainWindow(QMainWindow):
             btn = QPushButton(angle + "\u00b0")
             btn.setCheckable(True)
             btn.setProperty("class", "segment-btn")
+            # For QSS targeting logic in styles.qss which uses class="segment-btn" or [segment="true"]?
+            # Creating alias property for cleaner QSS if needed, 
+            # but keeping class property as per previous working version.
+            # Adding standard Qt property for QSS:
+            btn.setProperty("segment", True)
             
             if i == 0:
                 btn.setObjectName("seg_first")
@@ -157,7 +114,7 @@ class MainWindow(QMainWindow):
         self.btn_start.setFixedHeight(45)
         self.btn_start.clicked.connect(self.start_simulation)
         sidebar_layout.addWidget(self.btn_start)
-                
+        
         sidebar_layout.addSpacing(20)
         
         # 4. Metrics Group
@@ -170,7 +127,7 @@ class MainWindow(QMainWindow):
         self.lbl_err = QLabel("RELATIVE ERROR: --")
         
         # Monospace font for data alignment
-        font_mono = QFont("Consolas", 13)
+        font_mono = QFont("Menlo", 13)
         self.lbl_vtrue.setFont(font_mono)
         self.lbl_vest.setFont(font_mono)
         self.lbl_err.setFont(font_mono)
@@ -190,14 +147,10 @@ class MainWindow(QMainWindow):
         # Quit Button
         self.btn_quit = QPushButton("SYSTEM SHUTDOWN")
         self.btn_quit.setObjectName("btnQuit")
+        self.btn_quit.setCursor(Qt.PointingHandCursor)
+        self.btn_quit.setFixedHeight(45)
         self.btn_quit.clicked.connect(self.close)
         sidebar_layout.addWidget(self.btn_quit)
-        
-        # Footer
-        lbl_foot = QLabel("SYS ID: SONOMETRIC-V1\nVER: 2.1.0-MED")
-        lbl_foot.setObjectName("lblFooter")
-        lbl_foot.setAlignment(Qt.AlignCenter)
-        sidebar_layout.addWidget(lbl_foot)
         
         main_layout.addWidget(sidebar)
         
@@ -253,7 +206,7 @@ class MainWindow(QMainWindow):
         self.ax_err.grid(True, color='#222', linestyle='-', linewidth=0.5, axis='y')
 
     def start_simulation(self):
-        """Initialize and start the worker thread."""
+        """Initialize simulation via Controller."""
         btn = self.group_angle.checkedButton()
         if not btn: return 
         # Extract angle from "60°"
@@ -273,15 +226,12 @@ class MainWindow(QMainWindow):
             self.text_placeholder = None
             self.canvas.draw_idle()
 
-        # Run Worker
-        self.worker = SimulationWorker(angle)
-        self.worker.finished.connect(self.handle_results)
-        self.worker.error.connect(self.handle_error)
-        self.worker.start()
+        # Delegate to Controller
+        self.controller.start_acquisition(angle)
 
-    @pyqtSlot(object, object, object, float)
-    def handle_results(self, v_axis, t_spec, Zxx, v_est):
-        """Updates UI and Plots."""
+    @pyqtSlot(object, object, object, float, int)
+    def handle_results(self, v_axis, t_spec, Zxx, v_est, angle):
+        """Updates UI and Plots with results from Controller."""
         # Unlock UI
         self.btn_start.setEnabled(True)
         self.btn_start.setText("INITIALIZE ACQUISITION")
@@ -309,12 +259,12 @@ class MainWindow(QMainWindow):
         # Inferno map fits well with dark medical UI
         self.ax_spec.pcolormesh(t_spec, v_axis, Sxx_dB, shading='gouraud', cmap='inferno')
         
-        self.ax_spec.set_title(f"SPECTRAL DOPPLER (ANGLE: {self.worker.angle}\u00b0)", color='#e0e0e0', fontsize=10, loc='left', weight='bold')
+        self.ax_spec.set_title(f"SPECTRAL DOPPLER (ANGLE: {angle}\u00b0)", color='#e0e0e0', fontsize=10, loc='left', weight='bold')
         self.ax_spec.set_ylabel("VELOCITY (m/s)", color='#777', fontsize=9)
         self.ax_spec.tick_params(colors='#777', which='both', labelsize=9)
         self.ax_spec.set_ylim(-config.V_MAX_TRUE*3.5, config.V_MAX_TRUE*3.5)
         
-        # Reference Lines shouldn't be too distracting
+        # Reference Lines
         self.ax_spec.axhline(config.V_MAX_TRUE, color='#00e5ff', linestyle='--', alpha=0.3, linewidth=1)
         self.ax_spec.axhline(-config.V_MAX_TRUE, color='#00e5ff', linestyle='--', alpha=0.3, linewidth=1)
         
@@ -350,5 +300,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Ensure cleanup of artifacts on exit."""
+        if self.controller:
+            self.controller.stop_acquisition()
         cleanup.clean_project_artifacts()
         event.accept()

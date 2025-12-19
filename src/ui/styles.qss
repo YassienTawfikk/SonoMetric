@@ -1,25 +1,3 @@
-/* ================================
-   Design Tokens (DOCUMENTATION ONLY)
-   Qt DOES NOT support CSS variables
-   ================================ */
-/*
-bg-main:        #0f1115
-bg-panel:      #151922
-bg-elevated:   #1b2030
-border-soft:   #262b3a
-border-strong: #3a4158
-text-main:     #e6e9ef
-text-muted:    #9aa1b2
-accent-cyan:   #3ddcff
-accent-green:  #2ee59d
-accent-red:    #ff4d6d
-radius-sm:     6px
-radius-md:     10px
-*/
-
-/* ================================
-   Global Window + Widgets
-   ================================ */
 QMainWindow {
     background-color: #0f1115;
 }
@@ -30,9 +8,6 @@ QWidget {
     font-size: 14px;
 }
 
-/* ================================
-   Panels / Group Boxes
-   ================================ */
 QGroupBox {
     background-color: #151922;
     border: 1px solid #262b3a;
@@ -53,9 +28,6 @@ QGroupBox::title {
     background-color: #151922;
 }
 
-/* ================================
-   Buttons (Base)
-   ================================ */
 QPushButton {
     background-color: #1b2030;
     color: #e6e9ef;
@@ -65,10 +37,6 @@ QPushButton {
     font-weight: 600;
 }
 
-QPushButton:hover {
-    border-color: #3ddcff;
-    background-color: #20263a;
-}
 
 QPushButton:pressed {
     background-color: #2a3150;
@@ -80,44 +48,31 @@ QPushButton:disabled {
     background-color: #141826;
 }
 
-/* ================================
-   Start Button
-   ================================ */
 QPushButton#btnStart {
     background-color: rgba(46, 229, 157, 0.15);
     border: 1px solid #2ee59d;
     color: #ffffff;
 }
 
-QPushButton#btnStart:hover {
-    background-color: rgba(46, 229, 157, 0.30);
-}
 
 QPushButton#btnStart:pressed {
     background-color: rgba(46, 229, 157, 0.45);
 }
 
-/* ================================
-   Quit Button (RED, CLEAR, SERIOUS)
-   ================================ */
+
 QPushButton#btnQuit {
     background-color: transparent;
     border: 1px solid #ff4d6d;
     color: #ff4d6d;
+    padding: 10px 14px;
 }
 
-QPushButton#btnQuit:hover {
-    background-color: rgba(255, 77, 109, 0.15);
-}
 
 QPushButton#btnQuit:pressed {
     background-color: rgba(255, 77, 109, 0.35);
     color: #ffffff;
 }
 
-/* ================================
-   Segmented Controls (Qt-correct)
-   ================================ */
 QPushButton[segment="true"] {
     background-color: #1b2030;
     color: #9aa1b2;
@@ -127,9 +82,6 @@ QPushButton[segment="true"] {
     font-weight: 600;
 }
 
-QPushButton[segment="true"]:hover {
-    color: #e6e9ef;
-}
 
 QPushButton[segment="true"]:checked {
     background-color: #3ddcff;
@@ -148,9 +100,6 @@ QPushButton#seg_last {
     border-left: none;
 }
 
-/* ================================
-   Inputs
-   ================================ */
 QLineEdit, QComboBox, QTextEdit {
     background-color: #1b2030;
     border: 1px solid #262b3a;
@@ -163,25 +112,5 @@ QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
     border-color: #3ddcff;
 }
 
-/* ================================
-   Status Label
-   ================================ */
-QLabel#lblStatus {
-    background-color: #0b0e14;
-    border: 1px solid #262b3a;
-    border-radius: 6px;
-    padding: 10px;
-    font-family: "JetBrains Mono", Menlo, Monaco, "Courier New", monospace;
-    font-size: 13px;
-    color: #3ddcff;
-}
 
-/* ================================
-   Footer
-   ================================ */
-QLabel#lblFooter {
-    color: #9aa1b2;
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
+

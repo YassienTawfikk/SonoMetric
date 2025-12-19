@@ -3,43 +3,131 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from src.utils import config
 from src.core.laminar_flow import VesselPhantom
+from src.core.rf_generation import RFGenerator, SpectrogramGenerator
+from src.core.beam_angles import AngleManager
 
 
 class SimulationWorker(QThread):
     """
-    Runs the laminar flow simulation in a separate thread.
-    Emits scatterer positions continuously for visualization.
+    Runs the laminar flow simulation with RF generation in a separate thread.
+    Emits scatterer positions, RF data, and spectrograms for visualization.
+    OPTIMIZED: Reduced update frequency and smarter buffering.
     """
-    updated = pyqtSignal(object, object, object) # x, y, z arrays
+    flow_updated = pyqtSignal(object, object, object)  # x, y, z arrays
+    rf_updated = pyqtSignal(object, object)  # rf_signal, time_axis
+    spectrum_updated = pyqtSignal(object, object, object)  # time, velocities, power
+    metrics_updated = pyqtSignal(float, float, float)  # v_true, v_measured, error
     error = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, doppler_angle=60):
         super().__init__()
         self._is_running = True
+        self.doppler_angle = doppler_angle
 
     def stop(self):
         self._is_running = False
 
     def run(self):
         try:
-            # 1. Initialize Physics Objects
+            # Initialize Physics Objects
             phantom = VesselPhantom(
                 config.VESSEL_RADIUS, config.VESSEL_LENGTH,
                 config.V_MAX_TRUE, config.NUM_SCATTERERS, config.GATE_DEPTH
             )
 
+            # Initialize RF generator and spectrogram processor
+            rf_gen = RFGenerator(doppler_angle_deg=self.doppler_angle)
+            spec_gen = SpectrogramGenerator(doppler_angle_deg=self.doppler_angle)
+            angle_mgr = AngleManager()
+            angle_mgr.set_angle(self.doppler_angle)
+
             # Simulation parameters
-            fps = 30
+            fps = 20  # REDUCED from 30 for better performance
             dt = 1.0 / fps
-            
+            rf_duration = config.RF_WINDOW_DURATION
+
+            # Optimized buffering
+            rf_buffer = []
+            rf_time_buffer = []
+            max_buffer_size = 5  # REDUCED from 10
+
+            frame_count = 0
+            flow_update_interval = 2  # Update flow plot every 2 frames
+            rf_update_interval = 5  # Update RF every 5 frames (was 3)
+            spec_update_interval = 10  # Update spectrogram every 10 frames
+
             # Loop
             while self._is_running:
                 # Move Scatterers
                 phantom.update(dt)
-                
-                # Emit positions
-                self.updated.emit(phantom.x.copy(), phantom.y.copy(), phantom.z_rel.copy())
-                
+
+                # Emit flow positions (LESS FREQUENTLY)
+                if frame_count % flow_update_interval == 0:
+                    self.flow_updated.emit(
+                        phantom.x.copy(),
+                        phantom.y.copy(),
+                        phantom.z_rel.copy()
+                    )
+
+                # Generate RF data periodically
+                if frame_count % rf_update_interval == 0:
+                    # Generate RF sample
+                    rf_signal, time_axis = rf_gen.generate_rf_sample(
+                        phantom, rf_duration
+                    )
+
+                    # Emit RF signal
+                    self.rf_updated.emit(rf_signal.copy(), time_axis.copy())
+
+                    # Accumulate for spectrogram
+                    rf_buffer.append(rf_signal)
+                    rf_time_buffer.append(time_axis)
+
+                    # Keep buffer size limited
+                    if len(rf_buffer) > max_buffer_size:
+                        rf_buffer.pop(0)
+                        rf_time_buffer.pop(0)
+
+                # Generate spectrogram LESS FREQUENTLY
+                if frame_count % spec_update_interval == 0 and len(rf_buffer) >= 3:
+                    # Concatenate RF data (only when needed)
+                    rf_combined = np.concatenate(rf_buffer)
+                    time_combined = np.concatenate(rf_time_buffer)
+
+                    # Compute spectrogram
+                    spec_time, velocities, spec_power = spec_gen.compute_spectrogram(
+                        rf_combined, time_combined,
+                        window_size=config.STFT_WINDOW_SIZE,
+                        overlap=config.STFT_OVERLAP
+                    )
+
+                    # Emit spectrogram
+                    self.spectrum_updated.emit(
+                        spec_time.copy(),
+                        velocities.copy(),
+                        spec_power.copy()
+                    )
+
+                    # Calculate metrics
+                    v_measured = spec_gen.estimate_max_velocity(
+                        velocities, spec_power
+                    )
+                    v_true = config.V_MAX_TRUE
+
+                    # Debug info (less frequent)
+                    if frame_count % 30 == 0:  # Only every 30 frames
+                        num_in_gate = np.sum(rf_gen._scatterers_in_gate(phantom))
+                        print(f"[DEBUG] Angle: {self.doppler_angle}° | "
+                              f"Scatterers: {num_in_gate} | "
+                              f"V_measured: {v_measured:.3f} m/s")
+
+                    error = angle_mgr.calculate_relative_error(v_true, v_measured)
+
+                    # Emit metrics
+                    self.metrics_updated.emit(v_true, v_measured, error)
+
+                frame_count += 1
+
                 # Control frame rate
                 self.msleep(int(dt * 1000))
 
@@ -50,27 +138,63 @@ class SimulationWorker(QThread):
 class DopplerController(QObject):
     """
     Orchestrates the interaction between the UI and the Simulation logic.
+    Manages angle changes and coordinates multi-angle acquisitions.
     """
     # Signals to UI
     flow_update = pyqtSignal(object, object, object)
+    rf_update = pyqtSignal(object, object)
+    spectrum_update = pyqtSignal(object, object, object)
+    metrics_update = pyqtSignal(float, float, float)
     error_occurred = pyqtSignal(str)
-    
+
     def __init__(self):
         super().__init__()
         self.worker = None
+        self.angle_manager = AngleManager()
+        self.current_angle = self.angle_manager.get_angle()
 
-    def start_simulation(self):
+    def start_simulation(self, angle=None):
+        """Start simulation with specified angle."""
         if self.worker is not None and self.worker.isRunning():
             return
 
-        self.worker = SimulationWorker()
-        self.worker.updated.connect(self._handle_worker_update)
+        if angle is not None:
+            self.current_angle = angle
+            self.angle_manager.set_angle(angle)
+
+        self.worker = SimulationWorker(doppler_angle=self.current_angle)
+        self.worker.flow_updated.connect(self._handle_flow_update)
+        self.worker.rf_updated.connect(self._handle_rf_update)
+        self.worker.spectrum_updated.connect(self._handle_spectrum_update)
+        self.worker.metrics_updated.connect(self._handle_metrics_update)
         self.worker.error.connect(self._handle_worker_error)
         self.worker.start()
 
-    def _handle_worker_update(self, x, y, z):
+    def change_angle(self, new_angle):
+        """Change Doppler angle (requires restart)."""
+        was_running = self.worker is not None and self.worker.isRunning()
+
+        if was_running:
+            self.stop_simulation()
+
+        self.current_angle = new_angle
+        self.angle_manager.set_angle(new_angle)
+
+        if was_running:
+            self.start_simulation(angle=new_angle)
+
+    def _handle_flow_update(self, x, y, z):
         self.flow_update.emit(x, y, z)
-        
+
+    def _handle_rf_update(self, rf_signal, time_axis):
+        self.rf_update.emit(rf_signal, time_axis)
+
+    def _handle_spectrum_update(self, time, velocities, power):
+        self.spectrum_update.emit(time, velocities, power)
+
+    def _handle_metrics_update(self, v_true, v_measured, error):
+        self.metrics_update.emit(v_true, v_measured, error)
+
     def _handle_worker_error(self, msg):
         self.error_occurred.emit(msg)
         self._cleanup_worker()
@@ -85,3 +209,7 @@ class DopplerController(QObject):
         if self.worker:
             self.worker.deleteLater()
             self.worker = None
+
+    def get_current_angle(self):
+        """Return current Doppler angle."""
+        return self.current_angle

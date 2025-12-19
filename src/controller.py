@@ -2,8 +2,7 @@ import numpy as np
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from src.utils import config
-from src.core.simulation import VesselPhantom, UltrasoundSim
-from src.core.processing import SignalProcessor
+
 
 class SimulationWorker(QThread):
     """
@@ -23,6 +22,11 @@ class SimulationWorker(QThread):
     def run(self):
         try:
             # 1. Initialize Physics Objects
+            from src.core.laminar_flow import VesselPhantom
+            from src.core.rf_generation import UltrasoundSim
+            from src.core.stft_processing import STFTProcessor
+            from src.core.velocity_estimation import VelocityEstimator
+            
             phantom = VesselPhantom(
                 config.VESSEL_RADIUS, config.VESSEL_LENGTH,
                 config.V_MAX_TRUE, config.NUM_SCATTERERS, config.GATE_DEPTH
@@ -47,8 +51,20 @@ class SimulationWorker(QThread):
                 # Move Scatterers
                 phantom.update(dt_slow)
 
-            # 4. Signal Processing
-            v_axis, t_spec, Zxx, v_est = SignalProcessor.process_frame(rf_frame, self.angle)
+            # 4. Signal Processing using new modules
+            # a. STFT
+            v_axis_temp_unused, t_spec, Zxx = STFTProcessor.compute_spectrogram(rf_frame)
+            
+            # b. Velocity Axis & Estimation
+            v_axis = VelocityEstimator.calculate_velocity_axis(v_axis_temp_unused, self.angle)
+            # wait, compute_spectrogram returns f (freq), t, Zxx. 
+            # We need to map freq to velocity.
+            # let's fix the unpacking.
+            # STFTProcessor returns f, t, Zxx 
+            f_axis, t_spec, Zxx = STFTProcessor.compute_spectrogram(rf_frame)
+            v_axis = VelocityEstimator.calculate_velocity_axis(f_axis, self.angle)
+            v_est = VelocityEstimator.estimate_max_velocity(Zxx, v_axis)
+            
             self.finished.emit(v_axis, t_spec, Zxx, v_est)
 
         except Exception as e:

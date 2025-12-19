@@ -9,7 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from src.utils import config, cleanup
-from src.core.controller import DopplerController
+from src.controller import DopplerController
 
 # --- Main Window (GUI) ---
 class MainWindow(QMainWindow):

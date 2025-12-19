@@ -2,10 +2,15 @@ import numpy as np
 import scipy.signal as signal
 from src.utils import config
 
-class SignalProcessor:
-    """DSP Pipeline."""
+class STFTProcessor:
+    """Handles STFT computation and signal preprocessing (Demod, Wall Filter)."""
+    
     @staticmethod
-    def process_frame(rf_frame, angle_deg):
+    def compute_spectrogram(rf_frame):
+        """
+        Process RF frame to Spectrogram.
+        Returns: f (freq axis), t (time axis), Zxx (Complex Spectrogram)
+        """
         # 1. Demodulation
         num_fast, num_slow = rf_frame.shape
         t_axis = np.arange(num_fast) / config.FS
@@ -34,16 +39,4 @@ class SignalProcessor:
         Zxx = np.fft.fftshift(Zxx, axes=0)
         f = np.fft.fftshift(f)
         
-        # 5. Velocity Conversion
-        theta_rad = np.radians(angle_deg)
-        cos_theta = np.cos(theta_rad) if abs(np.cos(theta_rad)) > 1e-4 else 1e-4
-        v_axis = f * config.C / (2 * config.F0 * cos_theta)
-        
-        # 6. V_max Estimation
-        avg_spec = np.mean(np.abs(Zxx), axis=1)
-        avg_spec /= np.max(avg_spec)
-        threshold = 0.1
-        valid = np.where(avg_spec > threshold)[0]
-        v_est = np.max(np.abs(v_axis[valid])) if len(valid) > 0 else 0.0
-        
-        return v_axis, t, Zxx, v_est
+        return f, t, Zxx

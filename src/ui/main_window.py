@@ -27,27 +27,17 @@ class MainWindow(QMainWindow):
         self.controller.error_occurred.connect(self.handle_error)
         
         self.setup_ui()
-        self.apply_theme()
-        
-    def apply_theme(self):
-        """Applies a 'Medical Grade' Dark Theme from external stylesheet."""
-        try:
-            import os
-            # Build absolute path to styles.qss relative to this file
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            style_path = os.path.join(current_dir, "styles.qss")
-            
-            with open(style_path, "r") as f:
-                qss = f.read()
-                self.setStyleSheet(qss)
-        except Exception as e:
-            print(f"Error loading stylesheet: {e}")
-            # Fallback basic dark theme if file fails
-            self.setStyleSheet("QMainWindow { background-color: #121212; color: white; }")
         
     def setup_ui(self):
         # Central Widget & Layout
         central_widget = QWidget()
+        central_widget.setStyleSheet(
+            f"""
+                background-color: transparent;
+                color: #e6e9ef;
+                font-size: 14px;
+            """
+        )
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)

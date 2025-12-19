@@ -78,137 +78,20 @@ class MainWindow(QMainWindow):
         self.apply_theme()
         
     def apply_theme(self):
-        """Applies a 'Medical Grade' Dark Theme."""
-        qss = """
-        QMainWindow { background-color: #121212; }
-        QWidget { 
-            background-color: #121212; 
-            color: #e0e0e0; 
-            font-family: '.AppleSystemUIFont', 'Helvetica Neue', 'Segoe UI', sans-serif;
-            font-size: 14px;
-        }
-        
-        /* Group Box Styling */
-        QGroupBox { 
-            border: 1px solid #333; 
-            margin-top: 24px; 
-            font-weight: bold; 
-            padding-top: 20px;
-        }
-        QGroupBox::title { 
-            subcontrol-origin: margin; 
-            subcontrol-position: top left; 
-            padding: 0 5px; 
-            color: #00e5ff; /* Medical Cyan */
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 12px;
-        }
-        
-        /* Standard Buttons */
-        QPushButton { 
-            background-color: #1e1e1e; 
-            color: #00e5ff; 
-            border: 1px solid #00e5ff;
-            padding: 10px; 
-            font-weight: bold; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        QPushButton:hover { 
-            background-color: rgba(0, 229, 255, 0.1); 
-        }
-        QPushButton:pressed { 
-            background-color: rgba(0, 229, 255, 0.2); 
-        }
-        QPushButton:disabled { 
-            border-color: #444; 
-            color: #666; 
-        }
-        
-        /* Start Button Special Style (High Visibility) */
-        QPushButton#btnStart {
-            background-color: rgba(0, 200, 83, 0.2); /* Semi-transparent Green */
-            color: #ffffff; /* White Text */
-            border: 2px solid #00c853; /* Visible Green Border */
-        }
-        QPushButton#btnStart:hover { 
-            background-color: rgba(0, 200, 83, 0.4); 
-            border-color: #00e676;
-        }
-        QPushButton#btnStart:pressed { 
-            background-color: rgba(0, 200, 83, 0.6); 
-        }
-        QPushButton#btnStart:disabled { 
-            background-color: #1e1e1e; 
-            color: #555; 
-            border: 1px solid #333;
-        }
-
-        /* Quit Button Custom Style (Critical Red) */
-        QPushButton#btnQuit {
-            border: none; /* Reset inherited styles */
-            background-color: transparent;
-            border: 2px solid #ff1744; /* Explicit border */
-            color: #ff1744;
-            margin: 3px; /* Prevent clipping at layout edges */
-            padding: 8px;
-        }
-        QPushButton#btnQuit:hover { 
-            background-color: rgba(255, 23, 68, 0.1); 
-        }
-        QPushButton#btnQuit:pressed { 
-            background-color: rgba(255, 23, 68, 0.3);
-            color: #ffffff; 
-        }
-        
-        /* Segmented Control Buttons (Angle) */
-        QPushButton[class="segment-btn"] {
-            background-color: #1e1e1e;
-            color: #777;
-            border: 1px solid #333;
-            padding: 12px;
-            font-weight: bold;
-            font-family: 'Consolas', monospace;
-        }
-        QPushButton[class="segment-btn"]:checked {
-            background-color: #ffffff; /* White background for max contrast */
-            color: #000000; /* Black Text */
-            border: 1px solid #ffffff;
-        }
-        QPushButton[class="segment-btn"]:hover {
-            border: 1px solid #666;
-        }
-        
-        QPushButton#seg_first {
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
-        }
-        QPushButton#seg_last {
-            border-top-right-radius: 4px;
-            border-bottom-right-radius: 4px;
-            border-left: none;
-        }
-
-        /* Status Label */
-        QLabel#lblStatus {
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
-            color: #00e5ff;
-            background-color: #0a0a0a;
-            border: 1px solid #333;
-            padding: 8px;
-        }
-        
-        /* Footer */
-        QLabel#lblFooter {
-            color: #555;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        """
-        self.setStyleSheet(qss)
+        """Applies a 'Medical Grade' Dark Theme from external stylesheet."""
+        try:
+            import os
+            # Build absolute path to styles.qss relative to this file
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            style_path = os.path.join(current_dir, "styles.qss")
+            
+            with open(style_path, "r") as f:
+                qss = f.read()
+                self.setStyleSheet(qss)
+        except Exception as e:
+            print(f"Error loading stylesheet: {e}")
+            # Fallback basic dark theme if file fails
+            self.setStyleSheet("QMainWindow { background-color: #121212; color: white; }")
         
     def setup_ui(self):
         # Central Widget & Layout

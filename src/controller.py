@@ -124,7 +124,7 @@ class SimulationWorker(QThread):
                     error = angle_mgr.calculate_relative_error(v_true, v_measured)
 
                     # Emit metrics
-                    self.metrics_updated.emit(v_true, v_measured, error)
+                    self.metrics_updated.emit(float(v_true), float(v_measured), float(error))
 
                 frame_count += 1
 

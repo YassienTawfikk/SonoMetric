@@ -13,13 +13,13 @@
 # NUM_LINES = 128         # Slow time samples per frame
 
 # Physical Parameters
-VESSEL_RADIUS = 0.003  # [m] 3mm radius
-VESSEL_LENGTH = 0.02   # [m] 2cm length
+VESSEL_RADIUS = 0.005  # [m] 5mm radius
+VESSEL_LENGTH = 0.05   # [m] 5cm length
 V_MAX_TRUE = 0.5       # [m/s] Maximum velocity at center
 
 # Simulation Parameters
-NUM_SCATTERERS = 500   # REDUCED from 1000 for better performance
-FPS = 20              # REDUCED from 30 for smoother operation
+NUM_SCATTERERS = 2000  # Original value
+FPS = 30               # Original 30 FPS
 
 # Ultrasound Parameters
 TRANSDUCER_FREQ = 5e6      # [Hz] 5 MHz center frequency

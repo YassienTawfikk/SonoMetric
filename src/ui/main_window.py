@@ -325,10 +325,9 @@ class MainWindow(QMainWindow):
             offsets = np.c_[x[::2], y[::2]]
             self.scatter_plot.set_offsets(offsets)
 
-            # Use blit for faster updates
-            self.ax_flow.draw_artist(self.scatter_plot)
-            self.canvas.blit(self.ax_flow.bbox)
-            self.canvas.flush_events()
+            # Use draw_idle instead of manual blit to ensure background clearing
+            self.scatter_plot.set_offsets(offsets)
+            self.canvas.draw_idle()
 
     @pyqtSlot(object, object)
     def update_rf_plot(self, rf_signal, time_axis):

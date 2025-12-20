@@ -16,7 +16,7 @@ class RFGenerator:
         self.doppler_angle = np.radians(doppler_angle_deg)
         self.f0 = config.TRANSDUCER_FREQ
         self.c = config.SPEED_OF_SOUND
-        self.fs = config.SAMPLING_FREQ
+        self.fs = config.PRF  # Use PRF for slow-time baseband simulation
 
         # Sample volume definition
         self.gate_depth = config.GATE_DEPTH
@@ -121,7 +121,7 @@ class SpectrogramGenerator:
         self.doppler_angle = np.radians(doppler_angle_deg)
         self.f0 = config.TRANSDUCER_FREQ
         self.c = config.SPEED_OF_SOUND
-        self.fs = config.SAMPLING_FREQ
+        self.fs = config.PRF  # Use PRF for slow-time baseband simulation
 
     def compute_spectrogram(self, rf_signal, time_axis, window_size=256, overlap=0.75):
         """

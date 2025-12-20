@@ -25,7 +25,7 @@ FPS = 30               # Original 30 FPS
 TRANSDUCER_FREQ = 5e6      # [Hz] 5 MHz center frequency
 SPEED_OF_SOUND = 1540      # [m/s] Speed of sound in tissue
 SAMPLING_FREQ = 20e6       # [Hz] 20 MHz sampling rate (4x Nyquist)
-PRF = 5000                 # [Hz] Pulse Repetition Frequency
+PRF = 10000                 # [Hz] Pulse Repetition Frequency (Increased for 30 deg)
 
 # Sample Volume (Gate) Parameters
 GATE_DEPTH = 0.03          # [m] 3cm depth from surface

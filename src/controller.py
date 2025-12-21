@@ -29,6 +29,21 @@ class SimulationWorker(QThread):
     def stop(self):
         self._is_running = False
 
+    def set_angle(self, angle_deg):
+        """Update simulation angle dynamically."""
+        self.doppler_angle = angle_deg
+        # Update components if they exist
+        if hasattr(self, 'rf_gen'):
+            self.rf_gen.set_angle(angle_deg)
+        if hasattr(self, 'angle_mgr'):
+            self.angle_mgr.set_angle(angle_deg)
+        # Note: SpectrogramGenerator currently ignores live updates in compute_spectrogram, 
+        # but re-init isn't needed if it just uses constants or we don't change f0/c.
+        # Ideally SpecGen should also have set_angle if it cached cos_theta.
+        # Based on code, it uses self.doppler_angle in init, so we should update it.
+        if hasattr(self, 'spec_gen'):
+             self.spec_gen.doppler_angle = np.radians(angle_deg)
+
     def run(self):
         try:
             # Initialize Physics Objects
@@ -38,11 +53,11 @@ class SimulationWorker(QThread):
             )
 
             # Initialize RF generator and spectrogram processor
-            rf_gen = RFGenerator(doppler_angle_deg=self.doppler_angle)
-            spec_gen = SpectrogramGenerator(doppler_angle_deg=self.doppler_angle)
-            angle_mgr = AngleManager()
+            self.rf_gen = RFGenerator(doppler_angle_deg=self.doppler_angle)
+            self.spec_gen = SpectrogramGenerator(doppler_angle_deg=self.doppler_angle)
+            self.angle_mgr = AngleManager()
             velocity_est=velocity_estimation()
-            angle_mgr.set_angle(self.doppler_angle)
+            self.angle_mgr.set_angle(self.doppler_angle)
 
             # Simulation parameters
             fps = 20  # REDUCED from 30 for better performance
@@ -75,7 +90,7 @@ class SimulationWorker(QThread):
                 # Generate RF data periodically
                 if frame_count % rf_update_interval == 0:
                     # Generate RF sample
-                    rf_signal, time_axis = rf_gen.generate_rf_sample(
+                    rf_signal, time_axis = self.rf_gen.generate_rf_sample(
                         phantom, rf_duration
                     )
 
@@ -98,7 +113,7 @@ class SimulationWorker(QThread):
                     time_combined = np.concatenate(rf_time_buffer)
 
                     # Compute spectrogram
-                    spec_time, velocities, spec_power = spec_gen.compute_spectrogram(
+                    spec_time, velocities, spec_power = self.spec_gen.compute_spectrogram(
                         rf_combined, time_combined,
                         window_size=config.STFT_WINDOW_SIZE,
                         overlap=config.STFT_OVERLAP
@@ -112,14 +127,14 @@ class SimulationWorker(QThread):
                     )
 
                     # Calculate metrics
-                    v_measured = spec_gen.estimate_max_velocity(
+                    v_measured = self.spec_gen.estimate_max_velocity(
                         velocities, spec_power
                     )
                     v_true = config.V_MAX_TRUE
 
                     # Debug info (less frequent)
                     if frame_count % 30 == 0:  # Only every 30 frames
-                        num_in_gate = np.sum(rf_gen._scatterers_in_gate(phantom))
+                        num_in_gate = np.sum(self.rf_gen._scatterers_in_gate(phantom))
                         print(f"[DEBUG] Angle: {self.doppler_angle}° | "
                               f"Scatterers: {num_in_gate} | "
                               f"V_measured: {v_measured:.3f} m/s")
@@ -173,18 +188,26 @@ class DopplerController(QObject):
         self.worker.error.connect(self._handle_worker_error)
         self.worker.start()
 
+    def update_angle_live(self, angle):
+        """Update angle live without restarting simulation."""
+        self.current_angle = angle
+        self.angle_manager.set_angle(angle)
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.set_angle(angle)
+
     def change_angle(self, new_angle):
         """Change Doppler angle (requires restart)."""
         was_running = self.worker is not None and self.worker.isRunning()
 
         if was_running:
-            self.stop_simulation()
-
-        self.current_angle = new_angle
-        self.angle_manager.set_angle(new_angle)
-
-        if was_running:
-            self.start_simulation(angle=new_angle)
+            # For massive changes or logic that requires restart, use this.
+            # But for simple steering, update_angle_live is better.
+            self.update_angle_live(new_angle)
+        else:
+            self.current_angle = new_angle
+            self.angle_manager.set_angle(new_angle)
+            if was_running:
+                self.start_simulation(angle=new_angle)
 
     def _handle_flow_update(self, x, y, z):
         self.flow_update.emit(x, y, z)

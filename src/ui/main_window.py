@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QPushButton, QFrame, QMessageBox, QGroupBox,
-                             QButtonGroup, QSizePolicy)
+                             QSizePolicy, QDial)
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QCloseEvent, QFont
 import matplotlib
@@ -60,6 +60,8 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(25, 30, 25, 30)
 
         # Title / Brand
+        title_container = QWidget()
+        title_layout = QHBoxLayout(title_container)
         lbl_title = QLabel("SONOMETRIC")
         lbl_title.setStyleSheet("font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #ff5252;")
         sidebar_layout.addWidget(lbl_title)
@@ -92,52 +94,44 @@ class MainWindow(QMainWindow):
         hr.setStyleSheet("color: #444;")
         sidebar_layout.addWidget(hr)
 
-        # 2. Angle Controls (NOW FUNCTIONAL)
+        # 2. Angle Controls (Continuous Slider)
         grp_angle = QGroupBox("ANGLE OF INSONATION (θ)")
         grp_angle.setStyleSheet(
             "QGroupBox { font-weight: bold; color: #00e5ff; border: 1px solid #333; margin-top: 10px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }")
         angle_layout = QVBoxLayout()
 
-        angle_btn_layout = QHBoxLayout()
-        self.angle_group = QButtonGroup(self)
-        self.angle_group.setExclusive(True)
+        # Label to show current angle
+        self.lbl_angle_value = QLabel(f"{config.DEFAULT_ANGLE}°")
+        self.lbl_angle_value.setAlignment(Qt.AlignCenter)
+        self.lbl_angle_value.setStyleSheet("font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 5px;")
+        angle_layout.addWidget(self.lbl_angle_value)
 
-        self.angle_buttons = {}
-        for angle in config.AVAILABLE_ANGLES:
-            btn = QPushButton(f"{angle}°")
-            btn.setCheckable(True)
-            if angle == config.DEFAULT_ANGLE:
-                btn.setChecked(True)
+        # Wheel (QDial)
+        self.dial_angle = QDial()
+        self.dial_angle.setMinimum(config.MIN_ANGLE)
+        self.dial_angle.setMaximum(config.MAX_ANGLE)
+        self.dial_angle.setValue(config.DEFAULT_ANGLE)
+        self.dial_angle.setNotchesVisible(True)
+        self.dial_angle.setWrapping(False)
+        self.dial_angle.setCursor(Qt.PointingHandCursor)
+        self.dial_angle.setFixedHeight(120)  # Make it big enough to look like a wheel
+        self.dial_angle.setStyleSheet("""
+            QDial {
+                background-color: #222;
+                color: #00e5ff;
+            }
+        """)
+        
+        # Connect signals
+        self.dial_angle.valueChanged.connect(self.update_angle_label)
+        self.dial_angle.sliderReleased.connect(self.on_angle_slider_released)
+        
+        angle_layout.addWidget(self.dial_angle)
 
-            # Styling for clickable buttons
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #333; 
-                    color: #aaa; 
-                    border: 1px solid #444; 
-                    padding: 8px;
-                    border-radius: 4px;
-                }
-                QPushButton:checked {
-                    background-color: #00e5ff;
-                    color: #000;
-                    font-weight: bold;
-                    border: 1px solid #00e5ff;
-                }
-                QPushButton:hover {
-                    background-color: #444;
-                }
-            """)
-
-            btn.clicked.connect(lambda checked, a=angle: self.change_angle(a))
-            self.angle_group.addButton(btn)
-            self.angle_buttons[angle] = btn
-            angle_btn_layout.addWidget(btn)
-
-        angle_layout.addLayout(angle_btn_layout)
-        lbl_angle_note = QLabel("✓ Active: Beam steering implemented")
-        lbl_angle_note.setStyleSheet("color: #4caf50; font-size: 11px; font-style: italic;")
+        lbl_angle_note = QLabel("✓ Rotate wheel to steer beam")
+        lbl_angle_note.setStyleSheet("color: #4caf50; font-size: 11px; font-style: italic; margin-top: 5px;")
         angle_layout.addWidget(lbl_angle_note)
+        
         grp_angle.setLayout(angle_layout)
         sidebar_layout.addWidget(grp_angle)
 
@@ -179,7 +173,8 @@ class MainWindow(QMainWindow):
         self.btn_quit.clicked.connect(self.close)
         sidebar_layout.addWidget(self.btn_quit)
 
-        main_layout.addWidget(sidebar)
+        # Sidebar added later to appear on right
+        # main_layout.addWidget(sidebar)
 
         # --- RIGHT VISUALIZATION AREA ---
         content_area = QWidget()
@@ -195,6 +190,7 @@ class MainWindow(QMainWindow):
         content_layout.addWidget(self.canvas)
 
         main_layout.addWidget(content_area)
+        main_layout.addWidget(sidebar)  # Add sidebar last (Right side)
 
         self.init_plots()
         self.simulation_running = False
@@ -316,6 +312,19 @@ class MainWindow(QMainWindow):
     def change_angle(self, angle):
         """Handle angle change."""
         self.controller.change_angle(angle)
+
+    def update_angle_label(self, value):
+        """Update the label text and simulation as dial turns."""
+        self.lbl_angle_value.setText(f"{value}°")
+        # Live update
+        if hasattr(self, 'controller'):
+            self.controller.update_angle_live(value)
+
+    def on_angle_slider_released(self):
+        """Final commit of angle (optional, improves clarity)."""
+        # With live update, we don't strictly need to do anything here,
+        # but we can ensure everything is synced.
+        pass
 
     @pyqtSlot(object, object, object)
     def update_flow_plot(self, x, y, z):

@@ -18,8 +18,8 @@ VESSEL_LENGTH = 0.05   # [m] 5cm length
 V_MAX_TRUE = 0.5       # [m/s] Maximum velocity at center
 
 # Simulation Parameters
-NUM_SCATTERERS = 2000
-FPS = 30
+NUM_SCATTERERS = 2000  # Original value
+FPS = 30               # Original 30 FPS
 
 # Ultrasound Parameters
 TRANSDUCER_FREQ = 5e6      # [Hz] 5 MHz center frequency
@@ -34,7 +34,8 @@ GATE_WIDTH = 0.002         # [m] 2mm lateral width
 
 # Doppler Angles
 DEFAULT_ANGLE = 60         # [degrees] Default Doppler angle
-AVAILABLE_ANGLES = [30, 60, 75]  # [degrees] Selectable angles
+MIN_ANGLE = 10             # [degrees] Minimum steer angle
+MAX_ANGLE = 80             # [degrees] Maximum steer angle
 
 # Signal Processing Parameters
 RF_WINDOW_DURATION = 0.05  # REDUCED from 0.1s for faster processing

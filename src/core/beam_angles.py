@@ -26,37 +26,7 @@ class AngleManager:
         """Get current angle in radians."""
         return np.radians(self.current_angle)
 
-    def calculate_theoretical_vmax(self, v_true):
-        """
-        Calculate the theoretical measured Vmax for current angle.
-
-        Args:
-            v_true: True maximum velocity [m/s]
-
-        Returns:
-            v_measured_theory: Theoretical measured velocity [m/s]
-        """
-        # Doppler shift is proportional to cos(theta)
-        # Measured velocity = True velocity * cos(theta)
-        angle_rad = self.get_angle_radians()
-        return v_true * np.cos(angle_rad)
-
-    def calculate_relative_error(self, v_true, v_measured):
-        """
-        Calculate relative error between measured and theoretical values.
-
-        Args:
-            v_true: True maximum velocity [m/s]
-            v_measured: Measured maximum velocity [m/s]
-
-        Returns:
-            error_percent: Relative error [%]
-        """
-        v_theoretical = self.calculate_theoretical_vmax(v_true)
-        if v_theoretical == 0:
-            return 0.0
-        error = abs(v_measured - v_theoretical) / v_theoretical * 100
-        return error
+    
 
     def get_doppler_factor(self):
         """

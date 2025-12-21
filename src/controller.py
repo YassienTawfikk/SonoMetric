@@ -3,8 +3,10 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from src.utils import config
 from src.core.laminar_flow import VesselPhantom
-from src.core.rf_generation import RFGenerator, SpectrogramGenerator
+from src.core.rf_generation import RFGenerator
+from src.core.stft_processing import SpectrogramGenerator
 from src.core.beam_angles import AngleManager
+from src.core.velocity_estimation import velocity_estimation
 
 
 class SimulationWorker(QThread):
@@ -39,6 +41,7 @@ class SimulationWorker(QThread):
             rf_gen = RFGenerator(doppler_angle_deg=self.doppler_angle)
             spec_gen = SpectrogramGenerator(doppler_angle_deg=self.doppler_angle)
             angle_mgr = AngleManager()
+            velocity_est=velocity_estimation()
             angle_mgr.set_angle(self.doppler_angle)
 
             # Simulation parameters
@@ -121,7 +124,7 @@ class SimulationWorker(QThread):
                               f"Scatterers: {num_in_gate} | "
                               f"V_measured: {v_measured:.3f} m/s")
 
-                    error = angle_mgr.calculate_relative_error(v_true, v_measured)
+                    error = velocity_est.calculate_relative_error(v_true, v_measured, angle_deg=self.doppler_angle)
 
                     # Emit metrics
                     self.metrics_updated.emit(float(v_true), float(v_measured), float(error))

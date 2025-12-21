@@ -13,8 +13,12 @@ class RFGenerator:
         Args:
             doppler_angle_deg: Angle between ultrasound beam and flow direction
         """
-        self.doppler_angle = np.radians(doppler_angle_deg)
+        self.set_angle(doppler_angle_deg)
         self.f0 = config.TRANSDUCER_FREQ
+
+    def set_angle(self, angle_deg):
+        """Update the Doppler angle dynamically."""
+        self.doppler_angle = np.radians(angle_deg)
         self.c = config.SPEED_OF_SOUND
         self.fs = config.PRF  # Use PRF for slow-time baseband simulation
 

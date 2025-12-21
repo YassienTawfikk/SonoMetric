@@ -6,17 +6,16 @@ class AngleManager:
     """
     Manages Doppler angle configurations and calculates theoretical values.
     """
-    AVAILABLE_ANGLES = [30, 60, 75]  # degrees
 
     def __init__(self):
         self.current_angle = 60  # default
 
     def set_angle(self, angle_deg):
         """Set the current Doppler angle."""
-        if angle_deg in self.AVAILABLE_ANGLES:
+        if config.MIN_ANGLE <= angle_deg <= config.MAX_ANGLE:
             self.current_angle = angle_deg
         else:
-            raise ValueError(f"Angle must be one of {self.AVAILABLE_ANGLES}")
+            raise ValueError(f"Angle must be between {config.MIN_ANGLE} and {config.MAX_ANGLE}")
 
     def get_angle(self):
         """Get current angle in degrees."""
@@ -36,11 +35,6 @@ class AngleManager:
             Cosine of current angle
         """
         return np.cos(self.get_angle_radians())
-
-    @staticmethod
-    def get_all_angles():
-        """Return list of all available angles."""
-        return AngleManager.AVAILABLE_ANGLES.copy()
 
     def get_angle_info(self):
         """

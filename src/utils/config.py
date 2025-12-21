@@ -34,8 +34,8 @@ GATE_WIDTH = 0.002         # [m] 2mm lateral width
 
 # Doppler Angles
 DEFAULT_ANGLE = 60         # [degrees] Default Doppler angle
-MIN_ANGLE = 10             # [degrees] Minimum steer angle
-MAX_ANGLE = 80             # [degrees] Maximum steer angle
+MIN_ANGLE = -180             # [degrees] Minimum steer angle
+MAX_ANGLE = 180             # [degrees] Maximum steer angle
 
 # Signal Processing Parameters
 RF_WINDOW_DURATION = 0.05  # REDUCED from 0.1s for faster processing

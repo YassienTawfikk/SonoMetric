@@ -10,5 +10,4 @@ if __name__ == "__main__":
     
     window = MainWindow()
     window.showFullScreen()
-    #window.showFullScreen()
     sys.exit(app.exec_())

@@ -9,6 +9,6 @@ if __name__ == "__main__":
     app.setStyle("Fusion")
     
     window = MainWindow()
-    window.show()
-    #window.showFullScreen()
+    # window.show()
+    window.showFullScreen()
     sys.exit(app.exec_())

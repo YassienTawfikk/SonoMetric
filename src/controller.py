@@ -135,9 +135,10 @@ class SimulationWorker(QThread):
                     # Debug info (less frequent)
                     if frame_count % 30 == 0:  # Only every 30 frames
                         num_in_gate = np.sum(self.rf_gen._scatterers_in_gate(phantom))
-                        print(f"[DEBUG] Angle: {self.doppler_angle}° | "
-                              f"Scatterers: {num_in_gate} | "
-                              f"V_measured: {v_measured:.3f} m/s")
+                        pass
+                        # print(f"[DEBUG] Angle: {self.doppler_angle}° | "
+                        #       f"Scatterers: {num_in_gate} | "
+                        #       f"V_measured: {v_measured:.3f} m/s")
 
                     error = velocity_est.calculate_relative_error(v_true, v_measured, angle_deg=self.doppler_angle)
 

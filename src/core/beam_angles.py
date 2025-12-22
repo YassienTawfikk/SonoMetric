@@ -8,7 +8,7 @@ class AngleManager:
     """
 
     def __init__(self):
-        self.current_angle = 60  # default
+        self.current_angle = config.DEFAULT_ANGLE  # default
 
     def set_angle(self, angle_deg):
         """Set the current Doppler angle."""

@@ -19,7 +19,7 @@ GATE_LENGTH = 0.005         # [m] 5mm axial length
 GATE_WIDTH = 0.002          # [m] 2mm lateral width
 
 # Doppler Angles
-DEFAULT_ANGLE = 90          # [degrees] Default Doppler angle
+DEFAULT_ANGLE = 60          # [degrees] Default Doppler angle
 MIN_ANGLE = 0               # [degrees] Minimum steer angle
 MAX_ANGLE = 180             # [degrees] Maximum steer angle
 

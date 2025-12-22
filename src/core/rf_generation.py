@@ -75,10 +75,11 @@ class RFGenerator:
         # Generate RF signal as sum of complex exponentials
         rf_signal = np.zeros(n_samples, dtype=complex)
 
+        amplitude = 1.0 / np.sqrt(len(doppler_shifts))  # Normalize
+
         for i, (f_d, phi0) in enumerate(zip(doppler_shifts, initial_phases)):
             # Each scatterer contributes a tone at (f0 + f_doppler)
             # We'll work at baseband after demodulation, so just use f_doppler
-            amplitude = 1.0 / np.sqrt(len(doppler_shifts))  # Normalize
             rf_signal += amplitude * np.exp(1j * (2 * np.pi * f_d * time_axis + phi0))
 
         # Add noise

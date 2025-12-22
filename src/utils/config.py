@@ -24,6 +24,6 @@ MIN_ANGLE = 0               # [degrees] Minimum steer angle
 MAX_ANGLE = 180             # [degrees] Maximum steer angle
 
 # Signal Processing Parameters
-RF_WINDOW_DURATION = 0.05   # REDUCED from 0.1s for faster processing
-STFT_WINDOW_SIZE = 128      # REDUCED from 256 for faster FFT
-STFT_OVERLAP = 0.5          # REDUCED from 0.75 for less computation
+RF_WINDOW_DURATION = 0.1    # REDUCED from 0.1s for faster processing
+STFT_WINDOW_SIZE = 256      # REDUCED from 256 for faster FFT
+STFT_OVERLAP = 0.75         # REDUCED from 0.75 for less computation

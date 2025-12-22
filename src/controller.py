@@ -42,7 +42,7 @@ class SimulationWorker(QThread):
         # Ideally SpecGen should also have set_angle if it cached cos_theta.
         # Based on code, it uses self.doppler_angle in init, so we should update it.
         if hasattr(self, 'spec_gen'):
-             self.spec_gen.doppler_angle = np.radians(angle_deg)
+            self.spec_gen.doppler_angle = np.radians(angle_deg)
 
     def run(self):
         try:
@@ -56,11 +56,11 @@ class SimulationWorker(QThread):
             self.rf_gen = RFGenerator(doppler_angle_deg=self.doppler_angle)
             self.spec_gen = SpectrogramGenerator(doppler_angle_deg=self.doppler_angle)
             self.angle_mgr = AngleManager()
-            velocity_est=velocity_estimation()
+            velocity_est = velocity_estimation()
             self.angle_mgr.set_angle(self.doppler_angle)
 
             # Simulation parameters
-            fps = 20  # REDUCED from 30 for better performance
+            fps = 30  # REDUCED from 30 for better performance
             dt = 1.0 / fps
             rf_duration = config.RF_WINDOW_DURATION
 
@@ -70,9 +70,9 @@ class SimulationWorker(QThread):
             max_buffer_size = 5  # REDUCED from 10
 
             frame_count = 0
-            flow_update_interval = 2  # Update flow plot every 2 frames
-            rf_update_interval = 5  # Update RF every 5 frames (was 3)
-            spec_update_interval = 10  # Update spectrogram every 10 frames
+            flow_update_interval = 2     # Update flow plot every 2 frames
+            rf_update_interval = 5       # Update RF every 5 frames (was 3)
+            spec_update_interval = 10    # Update spectrogram every 10 frames
 
             # Loop
             while self._is_running:

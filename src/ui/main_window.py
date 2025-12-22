@@ -121,17 +121,17 @@ class MainWindow(QMainWindow):
                 color: #00e5ff;
             }
         """)
-        
+
         # Connect signals
         self.dial_angle.valueChanged.connect(self.update_angle_label)
         self.dial_angle.sliderReleased.connect(self.on_angle_slider_released)
-        
+
         angle_layout.addWidget(self.dial_angle)
 
         lbl_angle_note = QLabel("✓ Rotate wheel to steer beam")
         lbl_angle_note.setStyleSheet("color: #4caf50; font-size: 11px; font-style: italic; margin-top: 5px;")
         angle_layout.addWidget(lbl_angle_note)
-        
+
         grp_angle.setLayout(angle_layout)
         sidebar_layout.addWidget(grp_angle)
 
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
     def setup_rf_axis(self):
         """Setup RF data plot."""
         self.ax_rf.set_facecolor('#000000')
-        self.ax_rf.set_title("RF DATA STREAM (I+Q Baseband)", color='#e0e0e0', fontsize=10, loc='left', weight='bold')
+        self.ax_rf.set_title("I/Q BASEBAND SIGNAL", color='#e0e0e0', fontsize=10, loc='left', weight='bold')
         self.ax_rf.set_xlabel("Time [s]", color='#666', fontsize=8)
         self.ax_rf.set_ylabel("Amplitude", color='#666', fontsize=8)
         for spine in self.ax_rf.spines.values():

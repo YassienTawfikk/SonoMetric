@@ -1,7 +1,6 @@
 import numpy as np
 from src.utils import config
 
-
 class AngleManager:
     """
     Manages Doppler angle configurations and calculates theoretical values.
@@ -12,7 +11,7 @@ class AngleManager:
 
     def set_angle(self, angle_deg):
         """Set the current Doppler angle."""
-        if config.MIN_ANGLE <= angle_deg <= config.MAX_ANGLE:
+        if config.MIN_ANGLE <= angle_deg <= config.MAX_ANGLE: # Angle validation (0–180°)
             self.current_angle = angle_deg
         else:
             raise ValueError(f"Angle must be between {config.MIN_ANGLE} and {config.MAX_ANGLE}")
@@ -24,8 +23,6 @@ class AngleManager:
     def get_angle_radians(self):
         """Get current angle in radians."""
         return np.radians(self.current_angle)
-
-    
 
     def get_doppler_factor(self):
         """

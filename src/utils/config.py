@@ -4,8 +4,8 @@ VESSEL_LENGTH = 0.05   # [m] 5cm length
 V_MAX_TRUE = 0.5       # [m/s] Maximum velocity at center
 
 # Simulation Parameters
-NUM_SCATTERERS = 2000       # Original value
-FPS = 30                    # Original 30 FPS
+NUM_SCATTERERS = 2000
+FPS = 30
 
 # Ultrasound Parameters
 TRANSDUCER_FREQ = 5e6       # [Hz] 5 MHz center frequency

@@ -60,8 +60,7 @@ class SimulationWorker(QThread):
             self.angle_mgr.set_angle(self.doppler_angle)
 
             # Simulation parameters
-            fps = 30  # REDUCED from 30 for better performance
-            dt = 1.0 / fps
+            dt = 1.0 / config.FPS
             rf_duration = config.RF_WINDOW_DURATION
 
             # Optimized buffering

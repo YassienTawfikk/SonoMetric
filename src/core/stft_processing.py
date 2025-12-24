@@ -1,6 +1,7 @@
 import numpy as np
 from src.utils import config
 
+
 class SpectrogramGenerator:
     """
     Computes Doppler spectrogram from RF data using STFT.
@@ -36,14 +37,14 @@ class SpectrogramGenerator:
         freqs = np.fft.fftshift(np.fft.fftfreq(window_size, 1 / self.fs))
 
         # Convert to velocities using Doppler equation
-        #velocities = freqs * self.c / (2 * self.f0 * np.cos(self.doppler_angle))
-        #Doppler frequency f_d = 2*f0*(v_proj)/c where v_proj = v_true * cos(theta)
+        # velocities = freqs * self.c / (2 * self.f0 * np.cos(self.doppler_angle))
+        # Doppler frequency f_d = 2*f0*(v_proj)/c where v_proj = v_true * cos(theta)
         # Corrected (Clinical Flow Velocity):
         # We divide by cos(theta) to restore the true velocity scale
         cos_theta = np.cos(self.doppler_angle)
-        if abs(cos_theta) < 1e-3: # Handle 90 degree case
+        if abs(cos_theta) < 1e-3:  # Handle 90 degree case
             cos_theta = 1e-3 * np.sign(cos_theta) if cos_theta != 0 else 1e-3
-            
+
         velocities = freqs * self.c / (2 * self.f0 * cos_theta)
 
         # Initialize spectrogram

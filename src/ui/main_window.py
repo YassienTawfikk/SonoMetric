@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 
 from src.utils import config, cleanup
 from src.controller import DopplerController
+from matplotlib.ticker import MultipleLocator
 
 
 # --- Main Window (GUI) ---
@@ -266,13 +267,27 @@ class MainWindow(QMainWindow):
     def setup_spectrum_axis(self):
         """Setup Doppler spectrogram plot."""
         self.ax_spec.set_facecolor('#000000')
-        self.ax_spec.set_title("DOPPLER SPECTRUM (STFT)", color='#e0e0e0', fontsize=10, loc='left', weight='bold')
+        self.ax_spec.set_title(
+            "DOPPLER SPECTRUM (STFT)",
+            color='#e0e0e0',
+            fontsize=10,
+            loc='left',
+            weight='bold'
+        )
         self.ax_spec.set_xlabel("Time [s]", color='#666', fontsize=8)
         self.ax_spec.set_ylabel("Velocity [m/s]", color='#666', fontsize=8)
+
+        # Force Y-axis to step by 1
+        self.ax_spec.yaxis.set_major_locator(MultipleLocator(0.1))
+
         for spine in self.ax_spec.spines.values():
             spine.set_color('#333')
+
         self.ax_spec.tick_params(colors='#666', labelsize=7)
         self.spectrum_image = None
+
+        # 🔴 PyQt part people forget
+        self.canvas.draw_idle()
 
     def toggle_simulation(self):
         if not self.simulation_running:

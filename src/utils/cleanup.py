@@ -1,6 +1,7 @@
 import os
 import shutil
 
+
 def clean_project_artifacts(root_dir=None):
     """
     Recursively deletes __pycache__ and .idea directories starting from root_dir.
@@ -12,7 +13,6 @@ def clean_project_artifacts(root_dir=None):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
 
-    
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # Modify dirnames in-place to prevent walking into removed dirs
         # Copy list to iterate safely while modifying
@@ -24,4 +24,3 @@ def clean_project_artifacts(root_dir=None):
                 except Exception:
                     pass
                 dirnames.remove(d)
-

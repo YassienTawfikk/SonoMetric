@@ -1,6 +1,7 @@
 import numpy as np
 from src.utils import config
 
+
 class RFGenerator:
     """
     Generates pulsed Doppler RF signals from moving scatterers.
@@ -13,7 +14,7 @@ class RFGenerator:
             doppler_angle_deg: Angle between ultrasound beam and flow direction
         """
         self.set_angle(doppler_angle_deg)
-        self.f0 = config.TRANSDUCER_FREQ    # ultrasound center frequency
+        self.f0 = config.TRANSDUCER_FREQ  # ultrasound center frequency
 
     def set_angle(self, angle_deg):
         """Update the Doppler angle dynamically."""
@@ -43,7 +44,7 @@ class RFGenerator:
         """
         # Number of samples
         n_samples = int(duration * self.fs)
-        time_axis = np.arange(n_samples) / self.fs + self.time      # Offset by self.time for phase continuity
+        time_axis = np.arange(n_samples) / self.fs + self.time  # Offset by self.time for phase continuity
 
         # Filter scatterers within sample volume (gate)
         in_gate = self._scatterers_in_gate(phantom)
@@ -114,5 +115,3 @@ class RFGenerator:
     def reset_time(self):
         """Reset the time counter for new acquisition."""
         self.time = 0.0
-
-
